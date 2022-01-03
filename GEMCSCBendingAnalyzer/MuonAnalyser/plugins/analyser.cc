@@ -79,6 +79,7 @@ struct MuonData
   float track_chi2; float track_ndof; int n_ME11_segment; int which_track;
   int hasME11; int hasME11RecHit; int hasME11A; int hasME11ARecHit;
   int nCSCSeg; int nDTSeg; int nME11RecHits; float ME11_BunchX; int ME11_strip;
+  int ME11_location[5];
   //Rechit Info//////////////////////////////////////////////////////
   float rechit_GP[3]; float rechit_LP[3];
   float rechit_yroll; float rechit_localphi_rad; float rechit_localphi_deg;
@@ -87,6 +88,8 @@ struct MuonData
   float RdPhi; float RdPhi_Corrected; int rechit_detId;
   int nRecHitsTot; int nRecHits5; int nRecHits2;
   int rechit_location[5];
+  int nRecHitsRpos1L1; int nRecHitsRpos1L2;
+  int nRecHitsRneg1L1; int nRecHitsRneg1L2;
   //Sim info for MC
   float sim_GP[3]; float sim_LP[3];
   float simDy; float sim_yroll; int nSim;
@@ -110,6 +113,9 @@ void MuonData::init()
   track_chi2 = 999999; track_ndof = 999999; n_ME11_segment = 999999; which_track = 999999;
   hasME11 = 0; hasME11RecHit = 0; hasME11A = 0; hasME11ARecHit = 0;
   nCSCSeg = 999999; nDTSeg = 999999; nME11RecHits = 999999; ME11_BunchX = 999999; ME11_strip = 999999;
+  for(int i=0; i<5; ++i){
+    ME11_location[i] = 999999;
+  }
   //Rechit Info//////////////////////////////////////////////////////
   for(int i=0; i<3; ++i){
     rechit_GP[i] = 999999; rechit_LP[i] = 999999;
@@ -122,6 +128,8 @@ void MuonData::init()
   for(int i=0; i<5; ++i){
     rechit_location[i] = 999999;
   }
+  nRecHitsRpos1L1 = 999999; nRecHitsRpos1L2 = 999999;
+  nRecHitsRneg1L1 = 999999; nRecHitsRneg1L2 = 999999;
   //Sim info for MC
   for(int i=0; i<3; ++i){
     sim_GP[i] = 9999999; sim_LP[i] = 9999999;
@@ -166,6 +174,7 @@ TTree* MuonData::book(TTree *t, int prop_type){
   t->Branch("nCSCSeg", &nCSCSeg); t->Branch("nDTSeg", &nDTSeg);
   t->Branch("nME11RecHits", &nME11RecHits); t->Branch("ME11_BunchX", &ME11_BunchX);
   t->Branch("ME11_strip", &ME11_strip);
+  t->Branch("ME11_location", &ME11_location, "ME11_location[5] (end, sta, ring, cha, lay)/I");
   //Rechit Info//////////////////////////////////////////////////////
   t->Branch("rechit_GP", &rechit_GP, "rechit_GP[3] (x,y,z)/F");
   t->Branch("rechit_LP", &rechit_LP, "rechit_LP[3] (x,y,z)/F");
@@ -183,6 +192,10 @@ TTree* MuonData::book(TTree *t, int prop_type){
   t->Branch("nRecHits2", &nRecHits2);
   t->Branch("nRecHits5", &nRecHits5);
   t->Branch("rechit_location", &rechit_location, "rechit_location[5] (reg, sta, cha, lay, rol)/I");
+  t->Branch("nRecHitsRpos1L1", &nRecHitsRpos1L1);
+  t->Branch("nRecHitsRpos1L2", &nRecHitsRpos1L2);
+  t->Branch("nRecHitsRneg1L1", &nRecHitsRneg1L1);
+  t->Branch("nRecHitsRneg1L2", &nRecHitsRneg1L2);
   //Sim info for MC
   t->Branch("sim_GP", &sim_GP, "sim_GP[3] (x,y,z)/F");
   t->Branch("sim_LP", &sim_LP, "sim_LP[3] (x,y,z)/F");
@@ -314,7 +327,7 @@ float analyser::RdPhi_func(float stripAngle, const edm::OwnVector<GEMRecHit, edm
 }
 void analyser::CSCSegmentCounter(const reco::Muon* mu, MuonData& data_){
   const reco::Track* Track = mu->outerTrack().get();
-  int tmp_CSC_counter = 0; int tmp_DT_counter = 0; int tmp_ME11_counter = 0; int tmp_ME11RecHit_counter = 0; float tmp_ME11_BunchX = 99999; int tmp_ME11_strip = 99999;
+  int tmp_CSC_counter = 0; int tmp_DT_counter = 0; int tmp_ME11_counter = 0; int tmp_ME11RecHit_counter = 0; float tmp_ME11_BunchX = 99999; int tmp_ME11_strip = 99999; bool tmp_hasME11A = 0;
   if(isCosmic){
     tmp_CSC_counter = mu->numberOfSegments(1,2) + mu->numberOfSegments(2,2) + mu->numberOfSegments(3,2) + mu->numberOfSegments(4,2);
     tmp_DT_counter = mu->numberOfSegments(1,1) + mu->numberOfSegments(2,1) + mu->numberOfSegments(3,1) + mu->numberOfSegments(4,1);
@@ -325,6 +338,7 @@ void analyser::CSCSegmentCounter(const reco::Muon* mu, MuonData& data_){
         auto cscSegRef = MSM.cscSegmentRef;
         auto cscDetID = cscSegRef->cscDetId();
         if(cscDetID.station() == 1 and (cscDetID.ring() == 1 or cscDetID.ring() == 4)){
+          if(cscDetID.ring() == 4){tmp_hasME11A = 1;}
           tmp_ME11_counter++;
           ME11_segment = cscSegRef.get();
           tmp_ME11RecHit_counter = (cscSegRef.get())->nRecHits(); // Find the real function for this. Bad if multiple segments.
@@ -333,6 +347,7 @@ void analyser::CSCSegmentCounter(const reco::Muon* mu, MuonData& data_){
           const CSCLayer* tmp_ME11_layer = CSCGeometry_->layer(cscDetID_FAKE);
           const CSCLayerGeometry* tmp_ME11_layer_geo = tmp_ME11_layer->geometry();
           tmp_ME11_strip = tmp_ME11_layer_geo->nearestStrip(ME11_segment->localPosition());
+          data_.ME11_location[0] = cscDetID.endcap(); data_.ME11_location[1] = cscDetID.station(); data_.ME11_location[2] = cscDetID.ring(); data_.ME11_location[3] = cscDetID.chamber(); data_.ME11_location[4] = cscDetID.layer();
         }
       }
     }
@@ -354,6 +369,7 @@ void analyser::CSCSegmentCounter(const reco::Muon* mu, MuonData& data_){
             const CSCLayer* tmp_ME11_layer = CSCGeometry_->layer(cscDetID_FAKE);
             const CSCLayerGeometry* tmp_ME11_layer_geo = tmp_ME11_layer->geometry();
             tmp_ME11_strip = tmp_ME11_layer_geo->nearestStrip(ME11_segment->localPosition());
+            data_.ME11_location[0] = CSCDetId(RecHitId).endcap(); data_.ME11_location[1] = CSCDetId(RecHitId).station(); data_.ME11_location[2] = CSCDetId(RecHitId).ring(); data_.ME11_location[3] = CSCDetId(RecHitId).chamber(); data_.ME11_location[4] = CSCDetId(RecHitId).layer();
           }
           if (CSCDetId(RecHitId).station() == 1 and CSCDetId(RecHitId).ring() == 1){tmp_ME11RecHit_counter++;}
           if (RecHit->dimension() == 4){tmp_CSC_counter++;}
@@ -369,6 +385,7 @@ void analyser::CSCSegmentCounter(const reco::Muon* mu, MuonData& data_){
   data_.nME11RecHits = tmp_ME11RecHit_counter;
   data_.ME11_BunchX = tmp_ME11_BunchX;
   data_.ME11_strip = tmp_ME11_strip;
+  data_.hasME11A =  tmp_hasME11A;
   if(data_.n_ME11_segment >= 1 and data_.n_ME11_segment < 1000){data_.hasME11 = 1;}
 }
 void analyser::propagate_to_GEM(const reco::Muon* mu, const GEMEtaPartition* ch, int prop_type, bool &tmp_has_prop, GlobalPoint &pos_GP, MuonData& data_){
@@ -386,18 +403,20 @@ void analyser::propagate_to_GEM(const reco::Muon* mu, const GEMEtaPartition* ch,
       track = ttrackBuilder_->build(Track);
     }
     if(prop_type == 2){
-      Track = mu->outerTrack().get();
+      Track = mu->track().get();
+      //Track = mu->outerTrack().get();
       track = ttrackBuilder_->build(Track);
     }
     float inner_delta = abs(track.innermostMeasurementState().globalPosition().z() - GEMGeometry_->etaPartition(ch->id())->toGlobal(etaPart_ch->centreOfStrip(etaPart_ch->nstrips()/2)).z());
     float outer_delta = abs(track.outermostMeasurementState().globalPosition().z() - GEMGeometry_->etaPartition(ch->id())->toGlobal(etaPart_ch->centreOfStrip(etaPart_ch->nstrips()/2)).z());
+    float used_delta = 0;
     if (inner_delta < outer_delta){
-      tsos_seg = track.innermostMeasurementState(); tsos_ch = propagator->propagate(tsos_seg, ch->surface());
+      tsos_seg = track.innermostMeasurementState(); tsos_ch = propagator->propagate(tsos_seg, ch->surface()); used_delta = inner_delta;
       if(prop_type == 1){data_.which_track = 1;}
       else{data_.which_track = 0;}
     }
     else{
-      tsos_seg = track.outermostMeasurementState(); tsos_ch = propagator->propagate(tsos_seg, ch->surface());
+      tsos_seg = track.outermostMeasurementState(); tsos_ch = propagator->propagate(tsos_seg, ch->surface()); used_delta = outer_delta;
       if(prop_type == 1){data_.which_track = 0;}
       else{data_.which_track = 1;}
     }
@@ -406,6 +425,7 @@ void analyser::propagate_to_GEM(const reco::Muon* mu, const GEMEtaPartition* ch,
       const LocalPoint pos2D_local_ch(pos_local_ch.x(), pos_local_ch.y(), 0);
       if (!(tsos_ch.globalPosition().z() * tsos_seg.globalPosition().z() < 0) and bps.bounds().inside(pos2D_local_ch) and ch->id().station() == 1 and ch->id().ring() == 1){
         tmp_has_prop = true;
+        std::cout << "Delta to GEM!!! = " << used_delta << " prop " << prop_type << std::endl;
         pos_GP = tsos_ch.globalPosition();
         pos_startingPoint_GP = tsos_seg.globalPosition();
       }
@@ -463,9 +483,18 @@ void analyser::GEM_rechit_matcher(const GEMEtaPartition* ch, LocalPoint prop_LP,
   float tmp_RdPhi = 9999.; float tmp_RdPhi_Corrected; int tmp_rechit_detId;
   int tmp_nRecHitsTot = 0; int tmp_nRecHits5 = 0; int tmp_nRecHits2 = 0;
   int tmp_rechit_region; int tmp_rechit_station; int tmp_rechit_chamber; int tmp_rechit_layer; int tmp_rechit_roll;
+  int tmp_nRecHitsRpos1L1 = 0; int tmp_nRecHitsRpos1L2 = 0; int tmp_nRecHitsRneg1L1 = 0; int tmp_nRecHitsRneg1L2 = 0;
   for(auto hit = gemRecHits->begin(); hit != gemRecHits->end(); hit++){
     if((hit)->geographicalId().det() == DetId::Detector::Muon && (hit)->geographicalId().subdetId() == MuonSubdetId::GEM){
       GEMDetId gemid((hit)->geographicalId());
+      if(gemid.region() == 1){
+        if(gemid.layer() == 1){tmp_nRecHitsRpos1L1++;}
+        if(gemid.layer() == 2){tmp_nRecHitsRpos1L2++;}
+      }
+      if(gemid.region() == -1){
+        if(gemid.layer() == 1){tmp_nRecHitsRneg1L1++;}
+        if(gemid.layer() == 2){tmp_nRecHitsRneg1L2++;}
+      }
       if(gemid.station() == ch->id().station() and gemid.chamber() == ch->id().chamber() and gemid.layer() == ch->id().layer() and abs(gemid.roll() - ch->id().roll()) <= 1 and gemid.region() == ch->id().region()){
         const auto& etaPart = GEMGeometry_->etaPartition(gemid);
         float strip = etaPart->strip(hit->localPosition());
@@ -515,6 +544,7 @@ void analyser::GEM_rechit_matcher(const GEMEtaPartition* ch, LocalPoint prop_LP,
     data_.rechit_detId = tmp_rechit_detId;
     data_.nRecHitsTot = tmp_nRecHitsTot; data_.nRecHits5 = tmp_nRecHits5; data_.nRecHits2 = tmp_nRecHits2;
     data_.rechit_location[0] = tmp_rechit_region; data_.rechit_location[1] = tmp_rechit_station; data_.rechit_location[2] = tmp_rechit_chamber; data_.rechit_location[3] = tmp_rechit_layer; data_.rechit_location[4] = tmp_rechit_roll;
+    data_.nRecHitsRpos1L1 = tmp_nRecHitsRpos1L1; data_.nRecHitsRpos1L2 = tmp_nRecHitsRpos1L2; data_.nRecHitsRneg1L1 = tmp_nRecHitsRneg1L1; data_.nRecHitsRneg1L2 = tmp_nRecHitsRneg1L2;
   }
 }
 void analyser::GEM_simhit_matcher(const GEMEtaPartition* ch, GlobalPoint prop_GP, MuonData& data_){
