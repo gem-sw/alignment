@@ -4,7 +4,7 @@ config = config()
 ###2018runA  314472-318876
 #section general
 config.General.requestName = 'analyser'
-config.General.workArea = 'CRUZET_ME11_GT_sep21'#working dir 
+config.General.workArea = 'pTcheck_1134GT2021design_1203_nov9'#working dir 
 config.General.transferOutputs = True
 config.General.transferLogs = True
 
@@ -24,13 +24,14 @@ config.JobType.allowUndistributedCMSSW = True
 #section Data
 #config.Data.inputDataset = '/singleMuonGun_MuAl_pT-30to200_1102_phase1_2021_realistic/hyunyong-crab_singleMuonGun_pT-30to200_1102_phase1_2021_realistic_RAW2DIGI_FullRECOv4-1b4eba2dcd577d6bb642bb3e45609e5f/USER'
 #config.Data.inputDataset = '/Cosmics/Commissioning2021-CosmicSP-PromptReco-v1/RAW-RECO'
-config.Data.inputDataset = '/Cosmics/Commissioning2021-CosmicTP-PromptReco-v1/RAW-RECO'
-#config.Data.inputDataset = '/UndergroundCosmicMu_cfi_1102_phase1_2021/hyunyong-crab_UndergroundCosmicMu_1102_phase1_2021_step3-c9a68e0f82896adf960bb4af1c4e9584/USER'
+#config.Data.inputDataset = '/Cosmics/Commissioning2021-CosmicTP-PromptReco-v1/RAW-RECO'
+config.Data.inputDataset = '/singleMuonGun_pT_20_200_CMSSW_11_3_4_GT_2021_design/hyunyong-crab_singleMuonGun_11_3_4_2021_design_RAW2DIGI_RECO_v3-ce33467258ba6d6e1b97c4b94c6a3a02/USER'
+
 #config.Data.runRange = '342810,342966,343034,343082,343171,343266,343387,344134,344186,344266,344366'
 
 
-#config.Data.inputDBS = 'phys03'
-config.Data.inputDBS = 'global'
+config.Data.inputDBS = 'phys03'
+#config.Data.inputDBS = 'global'
 config.Data.splitting = 'FileBased'
 #config.Data.splitting = 'LumiBased'
 #config.Data.splitting = 'Automatic'
