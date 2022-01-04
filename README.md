@@ -3,9 +3,13 @@ GEM alignment studies
 
 ```
 scram p -n DirectoryName CMSSW_12_0_3
-cd GEMCSCBendingAnalyzer
+cd DirectoryName/src/
+git clone git@github.com:gem-sw/alignment.git
+cd alignment/GEM_Alignment/
+cmsenv
 scram b -j8
 cd test
+voms-proxy-init --rfc --voms cms
 cmsRun analyser.py
 ```
 
