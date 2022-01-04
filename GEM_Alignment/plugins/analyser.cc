@@ -268,7 +268,7 @@ analyser::analyser(const edm::ParameterSet& iConfig)
   Segment_prop = iConfig.getParameter<bool>("Segment_prop");
   debug = iConfig.getParameter<bool>("debug");
   isCosmic = iConfig.getParameter<bool>("isCosmic");
-  cout << "tracker_prop " << tracker_prop << " CSC_prop " << CSC_prop << " debug " << debug << std::endl;
+  cout << "tracker_prop " << tracker_prop << " CSC_prop " << CSC_prop << " Segment_prop " << Segment_prop << " debug " << debug << std::endl;
 
   if(CSC_prop){CSC_tree = data_.book(CSC_tree, 1); prop_list.push_back(1);}
   if(tracker_prop){Tracker_tree = data_.book(Tracker_tree, 2); prop_list.push_back(2);}
@@ -298,9 +298,9 @@ analyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup){
   if (! iEvent.getByToken(muons_, muons)) return;
   if (muons->size() == 0) return;
 
-  cout << "new evt numb is " << iEvent.eventAuxiliary().event() << " and new lumiblock is " << iEvent.eventAuxiliary().luminosityBlock() << endl;
+  if (debug) cout << "new evt numb is " << iEvent.eventAuxiliary().event() << " and new lumiblock is " << iEvent.eventAuxiliary().luminosityBlock() << endl;
 
-  cout << "Run Number is " << iEvent.run() << std::endl;
+  if (debug) cout << "Run Number is " << iEvent.run() << std::endl;
   for (size_t i = 0; i < muons->size(); ++i){
     //cout << "new muon" << endl;
     edm::RefToBase<reco::Muon> muRef = muons->refAt(i);
@@ -308,9 +308,9 @@ analyser::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup){
 
     //if (mu->pt() < 2.0) continue;  //can apply a pt cut later
     if (not mu->standAloneMuon()) continue;
-    cout << "new standalone" << endl;
+    if (debug) cout << "new standalone" << endl;
     for(auto it = std::begin(prop_list); it != std::end(prop_list); ++it){
-      std::cout << "prop " << *it << "about to start propagate" << std::endl;
+      if (debug) std::cout << "prop " << *it << "about to start propagate" << std::endl;
       int prop_type = *it;
       propagate(mu, prop_type, iEvent, i);
     }
@@ -425,7 +425,7 @@ void analyser::propagate_to_GEM(const reco::Muon* mu, const GEMEtaPartition* ch,
       const LocalPoint pos2D_local_ch(pos_local_ch.x(), pos_local_ch.y(), 0);
       if (!(tsos_ch.globalPosition().z() * tsos_seg.globalPosition().z() < 0) and bps.bounds().inside(pos2D_local_ch) and ch->id().station() == 1 and ch->id().ring() == 1){
         tmp_has_prop = true;
-        std::cout << "Delta to GEM!!! = " << used_delta << " prop " << prop_type << std::endl;
+        if (debug) std::cout << "Delta to GEM!!! = " << used_delta << " prop " << prop_type << std::endl;
         pos_GP = tsos_ch.globalPosition();
         pos_startingPoint_GP = tsos_seg.globalPosition();
       }

@@ -19,8 +19,6 @@ process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
 from Configuration.AlCa.GlobalTag import GlobalTag
 #process.CSCGeometryESModule.applyAlignment = cms.bool(False)
 
-#process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase2_realistic_T15', '')
-#process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase1_2021_realistic', '')
 process.GlobalTag = GlobalTag(process.GlobalTag, 'auto:phase1_2021_design', '')
 
 process.MessageLogger.cerr.FwkReport.reportEvery = 5000
@@ -49,7 +47,8 @@ process.source = cms.Source("PoolSource",
 			)
 				)
 
-process.source.fileNames.append('file:step2.root')
+#process.source.fileNames.append('file:step2.root')
+process.source.fileNames.append('/store/data/Commissioning2021/ZeroBias0/AOD/PromptReco-v1/000/346/490/00000/9d646c8b-8067-42e4-adfe-ea69403eaa64.root')
 
 process.options = cms.untracked.PSet(
                         SkipEvent = cms.untracked.vstring('ProductNotFound')
@@ -63,11 +62,12 @@ process.analyser = cms.EDAnalyzer('analyser',
 	gemSimHits = cms.InputTag("g4SimHits", "MuonGEMHits"), 
         muons = cms.InputTag("muons"),
 	vertexCollection = cms.InputTag("offlinePrimaryVerticies"),
-	tracker_prop = cms.bool(False),
-	CSC_prop = cms.bool(True),
-        Segment_prop = cms.bool(True),
+        #Which propagations to do
+	tracker_prop = cms.bool(True), 		#From inner track
+	CSC_prop = cms.bool(True), 		#From CSC track
+        Segment_prop = cms.bool(True),		#From ME1/1 segment
         debug = cms.bool(False),
-        isCosmic = cms.bool(True)
+        isCosmic = cms.bool(True)		#Cosmics go in opposite direction, ignores inner track
 )
 
 #process.p = cms.EndPath(process.analyser)
